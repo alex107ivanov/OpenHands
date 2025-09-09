@@ -715,6 +715,21 @@ class LLM(RetryMixin, DebugMixin):
             )
             return 0
 
+    def compact_messages(
+        self, messages: list[Message], token_limit: int
+    ) -> list[Message]:
+        """Reduce messages so that total tokens do not exceed the given limit.
+
+        The earliest messages after the system prompt are dropped until the
+        token count is within the limit. The system prompt is always preserved
+        and the first remaining message will be from the user if possible.
+        """
+        while len(messages) > 1 and self.get_token_count(messages) > token_limit:
+            messages.pop(1)
+            while len(messages) > 1 and messages[1].role != 'user':
+                messages.pop(1)
+        return messages
+
     def _is_local(self) -> bool:
         """Determines if the system is using a locally running LLM.
 

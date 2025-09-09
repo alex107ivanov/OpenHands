@@ -206,6 +206,17 @@ class CodeActAgent(Agent):
 
         initial_user_message = self._get_initial_user_message(state.history)
         messages = self._get_messages(condensed_history, initial_user_message)
+        if self.config.prompt_token_limit is not None:
+            token_count = self.llm.get_token_count(messages)
+            if token_count > self.config.prompt_token_limit:
+                logger.debug(
+                    'Prompt token count %s exceeds limit %s. Compacting.',
+                    token_count,
+                    self.config.prompt_token_limit,
+                )
+                messages = self.llm.compact_messages(
+                    messages, self.config.prompt_token_limit
+                )
         params: dict = {
             'messages': messages,
         }

@@ -1457,3 +1457,19 @@ def test_gemini_performance_optimization_end_to_end(mock_completion):
     # Verify temperature and top_p were removed for reasoning models
     assert 'temperature' not in call_kwargs
     assert 'top_p' not in call_kwargs
+
+
+def test_compact_messages_removes_old_messages():
+    config = LLMConfig(model='gpt-4', api_key='test_key')
+    llm = LLM(config, service_id='test-service')
+    messages = [
+        Message(role='system', content=[TextContent(text='sys')]),
+        Message(role='user', content=[TextContent(text='u1')]),
+        Message(role='assistant', content=[TextContent(text='a1')]),
+        Message(role='user', content=[TextContent(text='u2')]),
+    ]
+    with patch.object(llm, 'get_token_count', side_effect=[100, 10]):
+        compacted = llm.compact_messages(messages, 50)
+    assert len(compacted) == 2
+    assert compacted[0].role == 'system'
+    assert compacted[1].role == 'user'
